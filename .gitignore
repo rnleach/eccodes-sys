@@ -10,3 +10,10 @@ Cargo.lock
 #
 /.vscode/
 *.sublime-*
+
+#
+# Project specific
+#
+
+# Sometimes bindgen generated code is dumped here for inspection and debugging.
+generated_code*.rs
