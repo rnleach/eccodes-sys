@@ -37,6 +37,7 @@ fn main() {
         .whitelist_function("codes_.*")
         .whitelist_type("codes_.*")
         .whitelist_var("CODES_.*")
+        .parse_callbacks(Box::new(CustomParse))
         .blacklist_item("FILE")
         .blacklist_item("_IO.*")
         .blacklist_item("off_t")
@@ -64,4 +65,13 @@ fn main() {
 
     // let out_path = PathBuf::from("./generated_code_eccodes.rs");
     // bindings.write_to_file(out_path).expect("Couldn't write bindings!");
+}
+
+#[derive(Debug)]
+struct CustomParse;
+
+impl bindgen::callbacks::ParseCallbacks for CustomParse {
+    fn int_macro(&self, _name: &str, _value: i64) -> Option<bindgen::callbacks::IntKind> {
+        Some(bindgen::callbacks::IntKind::Int)
+    }
 }
