@@ -33,9 +33,10 @@ fn main() {
     //
     let bindings = bindgen::Builder::default()
         .header(header_path.to_string_lossy())
-        .rust_target(bindgen::RustTarget::default()) // defualts to latest stable
+        .rust_target(bindgen::RustTarget::Stable_1_33)
         .whitelist_function("codes_.*")
         .whitelist_type("codes_.*")
+        .whitelist_var("CODES_.*")
         .blacklist_item("FILE")
         .blacklist_item("_IO.*")
         .blacklist_item("off_t")
