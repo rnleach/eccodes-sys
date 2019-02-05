@@ -71,7 +71,15 @@ fn main() {
 struct CustomParse;
 
 impl bindgen::callbacks::ParseCallbacks for CustomParse {
-    fn int_macro(&self, _name: &str, _value: i64) -> Option<bindgen::callbacks::IntKind> {
-        Some(bindgen::callbacks::IntKind::Int)
+    fn int_macro(&self, name: &str, _value: i64) -> Option<bindgen::callbacks::IntKind> {
+        use bindgen::callbacks::IntKind::*;
+
+        let val = if name.starts_with("CODES_KEYS_ITERATOR") {
+            ULong
+        } else {
+            Int
+        };
+
+        Some(val)
     }
 }
