@@ -76,6 +76,8 @@ impl bindgen::callbacks::ParseCallbacks for CustomParse {
 
         let val = if name.starts_with("CODES_KEYS_ITERATOR") {
             ULong
+        } else if name == "CODES_MISSING_LONG"{
+            Long
         } else {
             Int
         };
