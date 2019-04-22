@@ -1,32 +1,48 @@
-use std::{env, path::PathBuf};
+use flate2::read::GzDecoder;
+use std::{
+    env,
+    error::Error,
+    fs::File,
+    path::{Path, PathBuf},
+};
+use tar::Archive;
+
+const VERSION: &str = include_str!("version"); // Requires x.y.z, all x, y, and z!
+const EXTRACTED_LIB: &str = concat!("eccodes-", include_str!("version"), "-Source");
+const ARCHIVED_LIB: &str = concat!("eccodes-", include_str!("version"), "-Source.tar.gz");
 
 fn main() {
-    // Tell cargo to link to the eccodes library, which needs to be installed on the system
-    // already.
-    pkg_config::Config::new()
-        .atleast_version("2.10")
-        .probe("eccodes")
-        .expect("failed to find eccodes library; eccodes or pkg-config not properly installed.");
+    let home_dir_install = dirs::home_dir().unwrap().join("usr");
+    let pc_dir = format!("{}/lib/pkgconfig/", home_dir_install.to_string_lossy());
+    std::env::set_var("PKG_CONFIG_PATH", pc_dir);
 
-    //
-    // Find the header file path
-    //
-    let header_path = pkg_config::get_variable("eccodes", "cflags")
-        // Convert to Option so we can use nth method in next step
-        .ok()
-        // Take the first value returned (for some reason it returns the same -I path twice)
-        .and_then(|var_string| {
-            var_string
-                .split_whitespace()
-                .nth(0)
-                .map(ToString::to_string)
-        })
-        // Make a PathBuf, but drop the leading -I
-        .map(|var_string| PathBuf::from(var_string[2..].to_owned()))
-        // Get out of Result/Option land
-        .expect("unable to find eccodes header file")
-        // Append the file name
-        .join("eccodes.h");
+    // Check to see if the library is installed, and install it if needed.
+    let lib = match pkg_config::Config::new()
+        .atleast_version(VERSION)
+        .probe("eccodes")
+    {
+        // Use the lib!
+        Ok(lib) => lib,
+        // Try to install the library from source
+        Err(pkg_config::Error::Failure {
+            command: ref _command,
+            output: ref _output,
+        }) => {
+            eprintln!("eccodes package not found, attempting to install...");
+            install_eccodes_c_libs(home_dir_install).expect("FATAL ERROR INSTALLING ECCODES C LIB");
+            pkg_config::Config::new()
+                .atleast_version(VERSION)
+                .probe("eccodes")
+                .expect("UNABLE TO FIND ECCODES C LIB AFTER INSTALLING")
+        }
+        // Give up
+        Err(err) => panic!("FATAL ERROR: {}", err),
+    };
+
+    let header_path = lib.include_paths[0]
+        .join("eccodes.h")
+        .canonicalize()
+        .unwrap();
 
     //
     // Create the bindings
@@ -64,7 +80,40 @@ fn main() {
     // inspection and debugging.
 
     // let out_path = PathBuf::from("./generated_code_eccodes.rs");
-    // bindings.write_to_file(out_path).expect("Couldn't write bindings!");
+    // bindings
+    //     .write_to_file(out_path)
+    //     .expect("Couldn't write bindings!");
+}
+
+fn install_eccodes_c_libs<P: AsRef<Path>>(home_dir_install: P) -> Result<(), Box<Error>> {
+    let mut arch_path = PathBuf::new();
+    arch_path.push(".");
+    arch_path.push("lib");
+    let arch_path = arch_path.join(ARCHIVED_LIB);
+
+    let tmp_dir = tempdir::TempDir::new("eccodes_install")?;
+    let src_path = tmp_dir.as_ref().join(EXTRACTED_LIB);
+
+    let home_dir_install: &Path = home_dir_install.as_ref();
+
+    let tar_gz = File::open(arch_path)?;
+    let tar = GzDecoder::new(tar_gz);
+    let mut archive = Archive::new(tar);
+    archive.unpack(tmp_dir.as_ref())?;
+
+    std::fs::create_dir_all(home_dir_install.join("bin"))?;
+    std::fs::create_dir_all(home_dir_install.join("lib"))?;
+    std::fs::create_dir_all(home_dir_install.join("include"))?;
+    std::fs::create_dir_all(home_dir_install.join("share"))?;
+
+    let _dst = cmake::Config::new(src_path)
+        .define("ENABLE_FORTRAN", "OFF")
+        .define("CMAKE_INSTALL_PREFIX", home_dir_install)
+        .build();
+
+    tmp_dir.close()?;
+
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -76,7 +125,7 @@ impl bindgen::callbacks::ParseCallbacks for CustomParse {
 
         let val = if name.starts_with("CODES_KEYS_ITERATOR") {
             ULong
-        } else if name == "CODES_MISSING_LONG"{
+        } else if name == "CODES_MISSING_LONG" {
             Long
         } else {
             Int
