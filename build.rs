@@ -110,6 +110,9 @@ fn install_eccodes_c_libs<P: AsRef<Path>>(home_dir_install: P) -> Result<(), Box
         .define("ENABLE_FORTRAN", "OFF")
         .define("CMAKE_INSTALL_PREFIX", home_dir_install)
         .define("BUILD_SHARED_LIBS", "OFF")
+        .define("ENABLE_JPG", "OFF")
+        .define("ENABLE_PYTHON", "OFF")
+        .define("ENABLE_FORTRAN", "OFF")
         .build();
 
     tmp_dir.close()?;
