@@ -49,7 +49,7 @@ fn main() {
     //
     let bindings = bindgen::Builder::default()
         .header(header_path.to_string_lossy())
-        .rust_target(bindgen::RustTarget::Stable_1_33)
+        .rust_target(bindgen::RustTarget::Stable_1_40)
         .whitelist_function("codes_.*")
         .whitelist_type("codes_.*")
         .whitelist_var("CODES_.*")
@@ -85,7 +85,7 @@ fn main() {
     //     .expect("Couldn't write bindings!");
 }
 
-fn install_eccodes_c_libs<P: AsRef<Path>>(home_dir_install: P) -> Result<(), Box<Error>> {
+fn install_eccodes_c_libs<P: AsRef<Path>>(home_dir_install: P) -> Result<(), Box<dyn Error>> {
     let mut arch_path = PathBuf::new();
     arch_path.push(".");
     arch_path.push("lib");
