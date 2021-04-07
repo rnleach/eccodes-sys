@@ -50,14 +50,14 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header(header_path.to_string_lossy())
         .rust_target(bindgen::RustTarget::Stable_1_40)
-        .whitelist_function("codes_.*")
-        .whitelist_type("codes_.*")
-        .whitelist_var("CODES_.*")
+        .allowlist_function("codes_.*")
+        .allowlist_type("codes_.*")
+        .allowlist_var("CODES_.*")
         .parse_callbacks(Box::new(CustomParse))
-        .blacklist_item("FILE")
-        .blacklist_item("_IO.*")
-        .blacklist_item("off_t")
-        .blacklist_item("__off.*")
+        .blocklist_item("FILE")
+        .blocklist_item("_IO.*")
+        .blocklist_item("off_t")
+        .blocklist_item("__off.*")
         .raw_line("use libc::{FILE, off_t};")
         .rustified_enum("ProductKind")
         .derive_copy(false)
@@ -96,6 +96,7 @@ fn install_eccodes_c_libs<P: AsRef<Path>>(home_dir_install: P) -> Result<(), Box
 
     let home_dir_install: &Path = home_dir_install.as_ref();
 
+    println!("{:?}", arch_path);
     let tar_gz = File::open(arch_path)?;
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
