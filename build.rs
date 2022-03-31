@@ -35,6 +35,19 @@ fn main() {
                 .probe("eccodes")
                 .expect("UNABLE TO FIND ECCODES C LIB AFTER INSTALLING")
         }
+        // Try to install the library from source
+        Err(pkg_config::Error::ProbeFailure {
+            command: ref _command,
+            name: ref _name,
+            output: ref _output,
+        }) => {
+            eprintln!("eccodes package not found, attempting to install...");
+            install_eccodes_c_libs(home_dir_install).expect("FATAL ERROR INSTALLING ECCODES C LIB");
+            pkg_config::Config::new()
+                .atleast_version(VERSION)
+                .probe("eccodes")
+                .expect("UNABLE TO FIND ECCODES C LIB AFTER INSTALLING")
+        }
         // Give up
         Err(err) => panic!("FATAL ERROR: {}", err),
     };

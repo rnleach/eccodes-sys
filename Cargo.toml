@@ -10,9 +10,9 @@ publish = false
 libc = "0.2"
 
 [build-dependencies]
-bindgen = "0.58.0"
+bindgen = "0.59.2"
 cmake = "0.1"
-dirs = "3.0.1"
+dirs = "4.0.0"
 flate2 = "1.0.7"
 tar = "0.4.22"
 tempdir = "0.3.7"
